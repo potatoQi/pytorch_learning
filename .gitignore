@@ -1,4 +1,4 @@
 data/*
-!data/
+!data/note.txt
 model/*
-!model/
+!model/note.txt
