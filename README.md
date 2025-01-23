@@ -16,7 +16,7 @@
 
 不过大模型确实要考虑的更多，小模型随便训训每次结果都差不多。而大模型可能遇到各种问题，我在实测中就遇到了训练无法进行的情况，估计是梯度消失了，loss 一直不变。或者即使训动了 (ResNet), 也会过拟合等等问题。
 
-这些问题目前我就不管了，因为这个仓库就是纯粹练习下简单 PyTorch 的应用的。调参和工程 trick 这些事不是目前这个仓库需要关心的主要矛盾。
+这些问题目前我就不管了，因为这个仓库就是纯粹练习下 PyTorch 的熟练度的。调参和工程 trick 这些事不是目前这个仓库需要关心的主要矛盾。
 
 - FashionMNIST
   - MLP: loss:0.78  | acc:71.18%
@@ -44,3 +44,10 @@
 - 任务二
   - 读入 FashionMNIST, CIFAR10, TinyImagenet 数据集; 进行TinyImagenet数据集的可视化;
   - 搭建 LetNet, AlexNet, VGGNet, ResNet; 写 train/eval loop; 保存/加载模型
+- 任务三
+  - 完成 minGPT 的编写
+
+## 待做
+- Transformer, ViT
+- AE, VAE, Diffusion, Flow Matching
+- GAN
