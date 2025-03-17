@@ -1,4 +1,1 @@
-data/*
-!data/note.txt
-model/*
-!model/note.txt
+/data/*
