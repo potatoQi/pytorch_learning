@@ -211,8 +211,8 @@ if __name__ == '__main__':
     save_dict = {
         'model': model.state_dict(),
     }
-    torch.save(save_dict, 'model.pth')
-    checkpoint = torch.load('model.pth')
+    torch.save(save_dict, '../checkpoints/transformer_model.pth')
+    checkpoint = torch.load('../checkpoints/transformer_model.pth')
     model.load_state_dict(checkpoint['model'])
 
     model.eval()
