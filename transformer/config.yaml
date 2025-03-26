@@ -1,0 +1,23 @@
+Dataset:
+  _target_: main.NumDataset
+  sample_num: 5000
+  max_num: 6
+  max_len: 10
+
+DataLoader:
+  batch_size: 1024
+  shuffle: false
+
+GPT:
+  _target_: main.GPT
+  use_my_multiheadattention: false
+  embedding_dim: 64
+  block_num: 16
+  num_heads: 8
+  block_pdrop: 0.1
+
+Other:
+  device: 'cuda'
+  lr: 1e-3
+  epochs: 20
+  save_path: '../checkpoints'
