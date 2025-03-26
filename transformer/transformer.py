@@ -39,6 +39,42 @@ class MyDataset(Dataset):
         }
         return res
 
+class CausalSelfAttention(nn.Module):
+    """ self attention layer """
+    def __init__(self, cfg):
+        super().__init__()
+        assert cfg.n_embd % cfg.n_head == 0, 'embedding 的维度必须是多头的整数倍'
+        self.qkv = nn.Linear(cfg.n_embd, 3 * cfg.n_embd)
+        self.proj = nn.Linear(cfg.n_embd, cfg.n_embd)
+        self.attn_dropout = nn.Dropout(cfg.atten_pdrop)
+        self.resid_dropout = nn.Dropout(cfg.resid_pdrop)
+        # 定义一个不被优化器优化的 buffer, 名字叫 mask, 这个 buffer 会被保存在 state_dict 中
+        # tril 是取下三角矩阵, view 是把它变成 4 维的, 为了和后面的 attention 矩阵相乘
+        self.register_buffer("mask", torch.tril(torch.ones(cfg.block_size, cfg.block_size)).view(1, 1, cfg.block_size, cfg.block_size))
+        self.softmax = nn.Softmax()
+        self.n_head = cfg.n_head
+        self.n_embd = cfg.n_embd
+
+    def forward(self, x):
+        # B 表示 batch, T 表示 token 的数量, C 表示每个 token 的维度
+        B, T, C = x.shape
+        # (B, T, 3 * C) -> (B, T, C) * 3
+        q, k, v = self.qkv(x).split(dim=-1, split_size=C)
+
+        # (B, T, C) -> (B, T, n_head, C // n_head) -> (B, n_head, T, C // n_head)
+        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+
+        # att: (B, n_head, T, T)
+        att = (q @ k.transpose(-2, -1)) / math.sqrt(C // self.n_head)
+        att = att.masked_fill(self.mask[:, :, :T, :T] == 0, float('-inf'))
+        att = nn.Softmax(dim=-1)(att)
+        att = self.attn_dropout(att)
+        y = att @ v # (B, n_head, T, C // n_head) x (B, n_head, T, C // n_head) -> (B, n_head, T, C // n_head)
+        y = y.transpose(1, 2).contiguous().view(B, T, C) # (B, T, n_head, C // n_head) -> (B, T, C)
+        return self.resid_dropout(self.proj(y))
+
 class Block(nn.Module):
     def __init__(
         self,

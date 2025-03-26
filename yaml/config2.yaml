@@ -1,0 +1,7 @@
+Students:
+  Normal_Students:
+    version: 0.0
+
+Teachers:
+  age: 33
+  name: 'Brain'

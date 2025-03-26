@@ -1,0 +1,17 @@
+Students:
+  Normal_Students:
+    _target_: Normal_Student.Normal_Student   # 如果想用 yaml 对类进行实例化，必须要有 _target_ 参数
+    version: 1.0
+    name: '小明'
+    instruction: 'normal instruction'
+    bool: true      # yaml 中用小写, None 为 null
+    id:             # 用 - 就是列表
+      - 1
+      - 2
+      - 3
+  Special_Students:
+    version: 2.0
+    name: '小红'
+    instruction: 'special instruction'
+    bool: false
+    id: ['a', 'b', 'c']   # 用 [] 也是列表
