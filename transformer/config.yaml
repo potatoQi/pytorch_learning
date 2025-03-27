@@ -10,14 +10,18 @@ DataLoader:
 
 GPT:
   _target_: main.GPT
-  use_my_multiheadattention: false
   embedding_dim: 64
   block_num: 16
   num_heads: 8
+  use_my_multiheadattention: false
   block_pdrop: 0.1
+  attn_pdrop: 0.1
+  fc_pdrop: 0.1
 
 Other:
   device: 'cuda'
   lr: 1e-3
-  epochs: 20
+  epochs: 30
   save_path: '../checkpoints'
+  test_tim: 100
+  load_path: null # 如果填 null 就会训练模型

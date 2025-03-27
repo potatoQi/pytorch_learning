@@ -58,13 +58,40 @@ class NumDataset(Dataset):
 class MyMultiheadAttention(nn.Module):
     def __init__(
             self,
+            pos_embeddings, # 位置编码大小
             embedding_dim,  # 词向量维度
             num_heads,      # 多头注意力头数
+            attn_pdrop,     # 注意力 dropout 概率
+            fc_pdrop,       # 全连接 dropout 概率
             ):
         super().__init__()
+        self.embedding_dim = embedding_dim
+        self.num_heads = num_heads
+        self.register_buffer('mask', torch.triu(torch.ones(pos_embeddings, pos_embeddings), diagonal=1).bool()) # tensor.mask_fill 需要 bool 类型
+
+        self.qkv = nn.Linear(embedding_dim, embedding_dim*3)
+        self.softmax = nn.Softmax(dim=-1)
+        self.drop1 = nn.Dropout(attn_pdrop)
+        self.fc = nn.Linear(embedding_dim, embedding_dim)
+        self.drop2 = nn.Dropout(fc_pdrop)
     
-    def forward(self):
-        pass
+    def forward(self, x):
+        # x: [b l d]
+        T = x.shape[1]
+        q, k, v = self.qkv(x).split(dim=-1, split_size=self.embedding_dim)  # [b l d]
+        q = rearrange(q, 'b l (h c) -> b h l c', h=self.num_heads)  # [b h l c]
+        k = rearrange(k, 'b l (h c) -> b h l c', h=self.num_heads)  # [b h l c]
+        v = rearrange(v, 'b l (h c) -> b h l c', h=self.num_heads)  # [b h l c]
+        att = q @ k.transpose(-2, -1) / (q.shape[-1] ** 0.5)  # [b h l l]
+        att = att.masked_fill(self.mask[:T, :T], float('-inf'))
+        att = self.softmax(att)
+        att = self.drop1(att)
+        y = att @ v  # [b h l c]
+        y = rearrange(y, 'b h l c -> b l (h c)') # [b l d]
+        y = self.fc(y)
+        y = self.drop2(y)
+        return y
+
 
 class Block(nn.Module):
     def __init__(
@@ -73,15 +100,25 @@ class Block(nn.Module):
             pos_embeddings, # 位置编码大小
             num_heads,      # 多头注意力
             block_pdrop,    # dropout 概率
-            use_my_multiheadattention=False,    # 是否使用自定义多头注意力
+            use_my_multiheadattention,    # 是否使用自定义多头注意力
+            attn_pdrop,     # 注意力 dropout 概率
+            fc_pdrop,       # 全连接 dropout 概率
             ):
         super().__init__()
+        self.use_my_multiheadattention = use_my_multiheadattention
+
         self.ln1 = nn.LayerNorm(embedding_dim)
         self.register_buffer('mask', torch.triu(torch.full((pos_embeddings, pos_embeddings), float('-inf')), diagonal=1))
         if not use_my_multiheadattention:
             self.attn = nn.MultiheadAttention(embed_dim=embedding_dim, num_heads=num_heads, batch_first=True)
         else:
-            self.attn = MyMultiheadAttention(embedding_dim, num_heads)
+            self.attn = MyMultiheadAttention(
+                pos_embeddings=pos_embeddings,
+                embedding_dim=embedding_dim,
+                num_heads=num_heads,
+                attn_pdrop=attn_pdrop,
+                fc_pdrop=fc_pdrop
+            )
         self.drop1 = nn.Dropout(block_pdrop)
         self.ln2 = nn.LayerNorm(embedding_dim)
         self.mlp = nn.Sequential(
@@ -96,7 +133,10 @@ class Block(nn.Module):
         x_res = x
         x = self.ln1(x)
         seq_len = x.shape[1]
-        x = self.attn(x, x, x, attn_mask=self.mask[:seq_len, :seq_len])[0]
+        if self.use_my_multiheadattention:
+            x = self.attn(x)
+        else:
+            x = self.attn(x, x, x, attn_mask=self.mask[:seq_len, :seq_len])[0]
         x = x_res + self.drop1(x)
 
         x_res = x
@@ -111,10 +151,12 @@ class GPT(nn.Module):
             num_embeddings,     # 词表大小
             embedding_dim,      # 词向量维度
             pos_embeddings,     # 位置编码大小
-            block_num=16,       # transformer block 数量
-            num_heads=8,        # 多头注意力头数
-            block_pdrop=0.1,    # transformer block 里的 dropout 概率
-            use_my_multiheadattention=False,    # 是否使用自定义的多头注意力
+            block_num,          # transformer block 数量
+            num_heads,          # 多头注意力头数
+            block_pdrop,        # transformer block 里的 dropout 概率
+            use_my_multiheadattention,    # 是否使用自定义的多头注意力
+            attn_pdrop,         # 注意力 dropout 概率
+            fc_pdrop,           # 全连接 dropout 概率
             ):
         super().__init__()
         self.num_embeddings = num_embeddings
@@ -124,6 +166,8 @@ class GPT(nn.Module):
         self.num_heads = num_heads
         self.block_pdrop = block_pdrop
         self.use_my_multiheadattention = use_my_multiheadattention
+        self.attn_pdrop = attn_pdrop
+        self.fc_pdrop = fc_pdrop
 
         self.token_embedding = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
         self.pos_embedding = nn.Embedding(num_embeddings=pos_embeddings, embedding_dim=embedding_dim)
@@ -134,6 +178,8 @@ class GPT(nn.Module):
                 num_heads=num_heads,
                 block_pdrop=block_pdrop,
                 use_my_multiheadattention=use_my_multiheadattention,
+                attn_pdrop=attn_pdrop,
+                fc_pdrop=fc_pdrop,
             ) for _ in range(block_num)
         ])
         self.ln = nn.LayerNorm(embedding_dim)
@@ -196,34 +242,36 @@ if __name__ == '__main__':
     model = instantiate(config_gpt).to(device)
 
     # 训练
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.Other.lr)
-    model.train()
-    for epoch in range(config.Other.epochs):
-        for step, data in tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Epoch {epoch+1}/{config.Other.epochs}'):
-            x = data['x'].to(device)
-            y = data['y'].to(device)
-            _, loss = model(x, y)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-        print(f'Epoch {epoch+1}/{config.Other.epochs}, loss: {loss.item()}')
+    if config.Other.load_path:
+        checkpoint = torch.load(config.Other.load_path, weights_only=True)
+        model.load_state_dict(checkpoint)
+        print(f'Model loaded from {config.Other.load_path}')
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.Other.lr)
+        model.train()
+        for epoch in range(config.Other.epochs):
+            for step, data in tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Epoch {epoch+1}/{config.Other.epochs}'):
+                x = data['x'].to(device)
+                y = data['y'].to(device)
+                _, loss = model(x, y)
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+            print(f'Epoch {epoch+1}/{config.Other.epochs}, loss: {loss.item()}')
 
-    # 保存模型
-    os.makedirs(config.Other.save_path, exist_ok=True)
-    save_path = os.path.join(config.Other.save_path, 'gpt.pth')
-    torch.save(model.state_dict(), save_path)
-    print(f'Model saved in {save_path}')
-
-    # 加载模型
-    checkpoint = torch.load(save_path, weights_only=True)
-    model.load_state_dict(checkpoint)
-    print(f'Model loaded from {save_path}')
+        # 保存模型
+        os.makedirs(config.Other.save_path, exist_ok=True)
+        save_path = os.path.join(config.Other.save_path, 'gpt.pth')
+        torch.save(model.state_dict(), save_path)
+        print(f'Model saved in {save_path}')
 
     # 推理
-    x = torch.randint(low=0, high=config.Dataset.max_num, size=(config.Dataset.max_len,)).to(device)
-    print('Input:', x.cpu())
-    y = model.generate(x)
-    print('Output:', y.cpu())
-    z = torch.sort(x).values
-    print('Ground Truth:', z.cpu())
-    print('Is correct:', torch.equal(y, z))
+    correct_num = 0
+    model.eval()
+    with torch.no_grad():
+        for step in tqdm(range(config.Other.test_tim), total=config.Other.test_tim):
+            x = torch.randint(low=0, high=config.Dataset.max_num, size=(config.Dataset.max_len,)).to(device)
+            y = model.generate(x)
+            z = torch.sort(x).values
+            correct_num += torch.equal(y, z)
+    print(f'Accuracy: {correct_num / config.Other.test_tim}')
