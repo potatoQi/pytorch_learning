@@ -269,6 +269,15 @@ if __name__ == '__main__':
     correct_num = 0
     model.eval()
     with torch.no_grad():
+        x = torch.randint(low=0, high=config.Dataset.max_num, size=(config.Dataset.max_len,)).to(device)
+        print(f'Input: {x.cpu()}')
+        y = model.generate(x)
+        print(f'Output: {y.cpu()}')
+        z = torch.sort(x).values
+        print(f'Truth: {z.cpu()}')
+        correct_num += torch.equal(y, z)
+        print(f'Accuracy: {correct_num}')
+
         for step in tqdm(range(config.Other.test_tim), total=config.Other.test_tim):
             x = torch.randint(low=0, high=config.Dataset.max_num, size=(config.Dataset.max_len,)).to(device)
             y = model.generate(x)
