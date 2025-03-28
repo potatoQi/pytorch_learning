@@ -247,7 +247,7 @@ if __name__ == '__main__':
         model.load_state_dict(checkpoint)
         print(f'Model loaded from {config.Other.load_path}')
     else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=config.Other.lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=config.Other.lr)
         model.train()
         for epoch in range(config.Other.epochs):
             for step, data in tqdm(enumerate(dataloader), total=len(dataloader), desc=f'Epoch {epoch+1}/{config.Other.epochs}'):
@@ -275,12 +275,11 @@ if __name__ == '__main__':
         print(f'Output: {y.cpu()}')
         z = torch.sort(x).values
         print(f'Truth: {z.cpu()}')
-        correct_num += torch.equal(y, z)
-        print(f'Accuracy: {correct_num}')
+        print()
 
         for step in tqdm(range(config.Other.test_tim), total=config.Other.test_tim):
             x = torch.randint(low=0, high=config.Dataset.max_num, size=(config.Dataset.max_len,)).to(device)
             y = model.generate(x)
             z = torch.sort(x).values
             correct_num += torch.equal(y, z)
-    print(f'Accuracy: {correct_num / config.Other.test_tim}')
+    print(f'Accuracy: {correct_num} / {config.Other.test_tim}')

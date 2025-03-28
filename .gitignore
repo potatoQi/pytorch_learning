@@ -1,3 +1,4 @@
-/data/*
+data/*
 /checkpoints/*
 __pycache__/*
+/tensorboard/runs/*
