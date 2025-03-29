@@ -13,7 +13,6 @@ import argparse
 import yaml                                         # pip install yaml
 from omegaconf import OmegaConf                     # pip install omegaconf
 from hydra.utils import instantiate                 # pip install hydra-core
-from Normal_Student import Normal_Student
 
 def get_parser(**parser_kwargs):
     parser = argparse.ArgumentParser(**parser_kwargs)
