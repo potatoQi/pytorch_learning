@@ -39,6 +39,13 @@ tensorboard 的基本用法其实很简单:
             figure=<matplotlib.figure.Figure>,
             global_step=<int>,
         )
+        视频
+        writer.add_video(
+            tag=<str>,
+            vid_tensor=<torch.Tensor>,  # [n t c h w]
+            global_step=<int>,
+            fps=<int>,
+        )
         计算图
         writer.add_graph(
             model=<torch.nn.Module>,
