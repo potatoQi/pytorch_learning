@@ -4,3 +4,4 @@ __pycache__/*
 /tensorboard/runs/*
 /wandb/wandb/*
 /transformer/runs/*
+/lightning/lightning_logs/*
