@@ -30,6 +30,8 @@ from hydra.utils import instantiate
 from einops import rearrange, repeat
 from tqdm import tqdm
 import os
+import datetime
+from torch.utils.tensorboard import SummaryWriter
 
 class NumDataset(Dataset):
     def __init__(
@@ -247,6 +249,9 @@ if __name__ == '__main__':
         model.load_state_dict(checkpoint)
         print(f'Model loaded from {config.Other.load_path}')
     else:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        log_dir = os.path.join('runs', timestamp)
+        writer = SummaryWriter(log_dir)
         optimizer = torch.optim.AdamW(model.parameters(), lr=config.Other.lr)
         model.train()
         for epoch in range(config.Other.epochs):
@@ -258,6 +263,12 @@ if __name__ == '__main__':
                 optimizer.step()
                 optimizer.zero_grad()
             print(f'Epoch {epoch+1}/{config.Other.epochs}, loss: {loss.item()}')
+            writer.add_scalar(
+                tag='loss',
+                scalar_value=loss.item(),
+                global_step=epoch * len(dataloader) + step,
+            )
+        writer.close()
 
         # 保存模型
         os.makedirs(config.Other.save_path, exist_ok=True)

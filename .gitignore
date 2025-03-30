@@ -3,3 +3,4 @@ data/*
 __pycache__/*
 /tensorboard/runs/*
 /wandb/wandb/*
+/transformer/runs/*

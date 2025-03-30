@@ -3,4 +3,3 @@
 - AE, VAE, VQVAE
 - ddpm, Flow Matching
 - ViT, Unet, DiT
-- flash-attn
