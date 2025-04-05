@@ -1,7 +1,6 @@
-data/*
+/data/*
 /checkpoints/*
-__pycache__/*
-/tensorboard/runs/*
+**/__pycache__/*
+**/runs/*
+**lightning_logs/*
 /wandb/wandb/*
-/transformer/runs/*
-/lightning/lightning_logs/*

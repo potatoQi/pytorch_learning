@@ -2,7 +2,7 @@
 tensorboard 的基本用法其实很简单:
 
     注意, tensorboard 为了节约资源会限制显示对象的数量, 这就会造成有时候某迭代时的数据不显示, 别担心, 用命令
-    tensorboard --logidir=xxx --samples_per_plugin=images=1000 即可
+    tensorboard --logdir=xxx --samples_per_plugin=images=1000 即可
     代表 IMAGES 页面最多显示 1000 张图片, 其它页面 (如 SCALARS) 也可以这样设置
 
     from torch.utils.tensorboard import SummaryWriter

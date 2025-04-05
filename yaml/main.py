@@ -20,7 +20,7 @@ def get_parser(**parser_kwargs):
     parser.add_argument('--float_num', type=float, default=0.1, help='float number', required=False)
     parser.add_argument('--str', type=str, default='hello', help='string')      # 如果字符串有空格要用引号括起来
     parser.add_argument('--is_ok', action='store_true', help='is ok')
-
+    
     # 读多个值
     parser.add_argument('--base', '-b',
                         nargs='*',      # nargs='*' 表示接受0个或多个参数, 所以会返回一个 list

@@ -1,0 +1,40 @@
+# tensorboard --logdir=runs --samples_per_plugin=images=10000000
+
+Others:
+  load_path: null #'../checkpoints/ddpm.pth'
+  save_path: '../checkpoints/'
+
+Dataset:
+  batch_size: 32
+
+LinearNoiseScheduler:
+  _target_: "main.LinearNoiseScheduler"
+  
+  beta_start: 0.0001
+  beta_end: 0.02
+  num_timesteps: 1000
+  device: 'cuda'
+
+UNet:
+  _target_: "main.UNet"
+  
+  device: 'cuda'
+  im_channels: 1
+  temb_dim: 16
+  
+  down_channels: [32, 64, 128]
+  down_sample: [true, true, false]
+  mid_channels: [256, 256, 256]
+
+  num_heads: 4
+  num_down_layers: 1
+  num_mid_layers: 1
+  num_up_layers: 1
+
+Train:
+  lr: 1e-4
+  epochs: 10
+
+Eval:
+  sample_num: 4
+  t_end: 1000
