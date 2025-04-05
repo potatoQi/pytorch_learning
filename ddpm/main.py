@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 from torchvision import datasets, transforms
 from einops import rearrange, repeat
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 from omegaconf import OmegaConf
 from hydra.utils import instantiate
@@ -26,6 +26,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import datetime, os
 import matplotlib.pyplot as plt
+from get_anime_dataloader import get_anime_dataloader
 
 def get_time_embedding(timesteps, temb_dim):
     # timesteps: [b]
@@ -384,10 +385,12 @@ class UNet(nn.Module):
     def sample(
         self,
         scheduler,
+        im_channels=3,
+        hw=64,
         sample_num=3,
         t_end=1000,
     ):
-        xt = torch.randn(sample_num, 1, 28, 28).to(self.device)
+        xt = torch.randn(sample_num, im_channels, hw, hw).to(self.device)
         x0_pred_list = []
 
         for idx in tqdm(range(t_end-1, -1, -1), total=t_end, desc='Sampling'):
@@ -408,26 +411,30 @@ if __name__ == '__main__':
     config = OmegaConf.load('config.yaml')
 
     # 数据集
-    train_dataset = datasets.MNIST(
-        root='../data',
-        train=True,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,)),
-        ]),
-        download=True,
-    )
-    test_dataset = datasets.MNIST(
-        root='../data',
-        train=False,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,)),
-        ]),
-        download=True,
-    )
-    train_dataloader = DataLoader(train_dataset, config.Dataset.batch_size, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, config.Dataset.batch_size, shuffle=False)
+    dataset_name = config.Dataset.name
+    if dataset_name == 'mnist':
+        train_dataset = datasets.MNIST(
+            root='../data',
+            train=True,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.5,), (0.5,)),   # 归一化到 [-1, 1]
+            ]),
+            download=True,
+        )
+        test_dataset = datasets.MNIST(
+            root='../data',
+            train=False,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.5,), (0.5,)),
+            ]),
+            download=True,
+        )
+        train_dataloader = DataLoader(train_dataset, config.Dataset.batch_size, shuffle=True)
+        test_dataloader = DataLoader(test_dataset, config.Dataset.batch_size, shuffle=False)
+    elif dataset_name == 'anime-faces':
+        train_dataloader, test_dataloader = get_anime_dataloader(batch_size=config.Dataset.batch_size)
 
     # 调度器 & 模型
     device = config.UNet.device
@@ -484,6 +491,8 @@ if __name__ == '__main__':
             with torch.no_grad():
                 _, x0_pred_list = model.sample(
                     scheduler=scheduler,
+                    im_channels=config.UNet.im_channels,
+                    hw=config.Dataset.hw,
                     sample_num=config.Eval.sample_num,
                     t_end=config.Eval.t_end,
                 )
@@ -501,6 +510,8 @@ if __name__ == '__main__':
     model.eval()
     images, _ = model.sample(
         scheduler=scheduler,
+        im_channels=config.UNet.im_channels,
+        hw=config.Dataset.hw,
         sample_num=config.Eval.sample_num,
         t_end=config.Eval.t_end,
     )
