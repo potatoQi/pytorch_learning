@@ -1,0 +1,4 @@
+- main.py 是 yaml 教学代码示例
+- config1.yaml 是配置文件
+- config2.yaml 同样是配置文件, 为了演示多个配置文件合并效果创建的第二个配置文件
+- Normal_Student.py 是辅助文件, 里面定义了一个类, 方便 main.py 直接调用, 从而减少不必要的教学代码长度

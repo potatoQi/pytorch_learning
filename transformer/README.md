@@ -1,0 +1,4 @@
+- main.py 是 transformer gpt 式数学排序代码
+- config.yaml 是配置文件
+- runs/ 是 tensorboard 日志记录路径
+- assets/ 是相关知识点图片

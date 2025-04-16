@@ -1,0 +1,3 @@
+- main.py 是基本的 wandb 使用代码示例
+- sweep.py 是基本的 sweep 使用代码示例
+- wandb/ 是自动创建的 wandb 本地日志文件夹

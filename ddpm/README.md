@@ -1,0 +1,8 @@
+- main.py 是 ddpm 教学代码
+- config.yaml 是配置文件
+- get_anime_dataloader.py 是只有加载 anime-faces 数据集才会用到的辅助文件
+- config_anime.yaml 是跟 anime-faces 数据集配套使用的配置文件
+- assets/ 是知识点图片
+- runs/ 是 tensorboard 日志保存路径
+- visualize.py 跟教学代码无关, 是自己做的一些小实验代码
+- xt_tensor.pt 是 visualize.py 会用到的东西

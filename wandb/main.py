@@ -43,7 +43,6 @@ run = wandb.init(
     },
 )
 
-
 # 创建一个 Table，包含 epoch、ground truth 和 prediction 三列 (下面会用到)
 comparison_table = wandb.Table(columns=["epoch", "Ground Truth", "Prediction"])
 
@@ -98,6 +97,7 @@ for epoch in range(2, epochs):
 
 run.log({"comparison_table": comparison_table}) # 记录表格只能在表格全部添加完后进行 log
 
+
 # 记录模型梯度和参数
 class MyModel(nn.Module):
     def __init__(self):
@@ -126,6 +126,8 @@ log_graph: 是否记录模型的结构图。
 '''
 wandb.watch(model, log="all", log_freq=2, log_graph=True)
 
+
+# 模拟训模型时的指标记录
 x_train = torch.randn(100, 10)
 y_train = torch.randint(0, 5, (100,))
 for epoch in range(10):
