@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:/app/anaconda3/envs/cppcuda/include",
+                "D:/app/anaconda3/envs/cppcuda/Lib/site-packages/torch/include",
+                "D:/app/anaconda3/envs/cppcuda/Lib/site-packages/torch/include/torch/csrc/api/include"
+                // linux 下上面这三行路径可能略有出入, linux 如下
+                /*
+                    "include/python3.8",
+                    "lib/python3.8/site-packages/torch/include",
+                    "lib/python3.8/site-packages/torch/include/torch/csrc/api/include"
+                */
+                
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}

@@ -4,3 +4,6 @@
 **/runs/*
 **lightning_logs/*
 /wandb/wandb/*
+/cppcuda/build/*
+/cppcuda/cppcuda.egg-info/*
+/cppcuda/cppcuda.cp38-win_amd64.pyd
